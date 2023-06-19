@@ -1,0 +1,7 @@
+Comandos para activar el entorno virtual (Desde la carpeta de SD he creado el entorno virtual sd-env):
+- python -m venv sd-env
+- sd-env\Scripts\activate.bat
+
+Con esto activa el entorno virtual. Para salir del venv hay que poner desactivate.
+Para instalar dentro del entorno virtual hay que poner:
+- python -m pip install ...

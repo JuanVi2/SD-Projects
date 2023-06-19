@@ -1,0 +1,19 @@
+Para arrancar kafka ir a C:/kafka y ejecutar estos comandos (en dos consolas distintas):
+- bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+- bin\windows\kafka-server-start.bat config\server.properties
+
+Listar tópicos
+- bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Crear tópico
+-bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic nombreTopic
+
+Crear productor
+-bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic nombreTopic
+
+Crear consumidor
+-bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic nombreTopic --from-beginning
+
+Detener kafka y zookeeper
+- bin\windows\kafka-server-stop.bat
+- bin\windows\zookeeper-server-stop.bat
