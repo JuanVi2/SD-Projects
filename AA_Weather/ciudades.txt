@@ -1,0 +1,5 @@
+Atlanta,15
+Toronto,-2
+Chicago,10
+Alicante,26
+Torremolinos,30
