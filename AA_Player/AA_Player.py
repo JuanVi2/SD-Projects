@@ -210,7 +210,7 @@ def login():
                                  consumer_timeout_ms=100)
         consumer.subscribe(['accesoout'])
         producer = KafkaProducer(bootstrap_servers=f'{ip_k}:{port_k}')
-        print("envido: ", mensaje)
+        print("enviado: ", mensaje)
         producer.send('accesoin', mensaje)
         control = True
         while control:
@@ -345,11 +345,11 @@ def pintaMenu(mode):
     print("Modo Actual: ", mode)
     print("""
     Opciones:
-    mode    : modo de comunicacion con el login
-    login   : inicia sesion de usuario
-    register: agrega un nuevo usuario
-    update  : actualiza los datos de un usuario
-    exit    : salir
+    m       : Modo de comunicacion (api o socket)
+    l       : Inicia sesion de usuario para partida
+    r       : Registra un nuevo usuario
+    u       : Actualiza los datos de un usuario
+    exit    : Salir
     """)
 
 # Press the green button in the gutter to run the script.
@@ -357,7 +357,7 @@ if __name__ == '__main__':
     if not filtra(argv):
         print("ERROR: Argumentos incorrectos")
         print("Usage: AA_Player.py <ip_registro:puerto> <ip_kafka:puerto> ")
-        print("Example: AA_Player.py 192.168.56.33:5054 192.168.56.26:9092")
+        print("Example: AA_Player.py 192.168.22.0:5054 192.168.22.0:9092")
         exit()
 
     ip_r = argv[1].split(":")[0]
@@ -376,23 +376,23 @@ if __name__ == '__main__':
         command = input("\nopcion > ")
         if command == "":
             pintaMenu(mode)
-        elif command == 'mode':
+        elif command == 'm':
             aux = input("modo de comunicacion con el login (api/socket): ")
             if aux not in ['api','socket']:
                 print("modo de comunicacion debe ser 'api o 'socket'")
             else:
                 mode = aux
-        elif command == 'login':
+        elif command == 'l':
             if mode == 'socket':
                 login()
             elif mode == 'api':
                 login_api()
-        elif command == 'update':
+        elif command == 'u':
             if mode == 'socket':
                 actualiza_perfil(ip_r, port_r)
             elif mode == 'api':
                 update_api()
-        elif command == 'register':
+        elif command == 'r':
             if mode == 'socket':
                 registra_perfil(ip_r, port_r)
             elif mode == 'api':
