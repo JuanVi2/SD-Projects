@@ -5,12 +5,45 @@ import threading
 from sys import argv
 import re
 import bcrypt
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from flask import Flask, request, jsonify
 
+app = Flask(__name__)
+
+registry = []
 
 IP = socket.gethostbyname(socket.gethostname())
 MAX_CONEXIONES = 2
 
-salt = bcrypt.gensalt()
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    alias = data['alias']
+    passwd = data['passwd']
+    nivel = data['nivel']
+    ef = data['ef']
+    ec = data['ec']
+    print(f"REGISTRO alias: {alias} passwd: {passwd} nivel: {nivel} ef: {ef} ec: {ec} ")
+    resultado = register(alias, passwd, nivel, ef, ec)
+    if resultado:
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "no"})
+    
+@app.route('/update', methods=['POST'])
+def update():
+    data = request.get_json()
+    alias = data['alias']
+    passwd = data['passwd']
+    n_alias = data['n_alias']
+    n_passwd = data['n_passwd']
+    resultado = update(alias, passwd, n_alias, n_passwd)
+    if resultado:
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "no"})
+
 
 def register(alias: str, passwd: str, nivel: int, ef: int, ec: int) -> bool:
     """
@@ -30,10 +63,9 @@ def register(alias: str, passwd: str, nivel: int, ef: int, ec: int) -> bool:
         print("ERROR: alias ya registrado")
         return False
     
-    
-    hashed_password = bcrypt.hashpw(passwd.encode('utf-8'), salt)
+    hpasswd = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt())
     sql_command = "INSERT INTO users (alias, passwd, nivel, ef, ec) VALUES (?, ?, ?, ?, ?)"
-    values = (alias, hashed_password, nivel, ef, ec)
+    values = (alias, hpasswd, nivel, ef, ec)
 
     try:
         cur.execute(sql_command, values)
@@ -54,22 +86,19 @@ def login(alias, passwd):
     :param passwd: password del usuario
     :return: True/False si se ha logeado con exito o no
     """
+
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
     sol = False
-    input_passwd = passwd.encode('utf-8')
     for row in cur.execute(f"select passwd from users where alias like '{alias}';"):
         bd_passwd = row[0]
-    if bcrypt.checkpw(input_passwd, bd_passwd):
+    
+    if bd_passwd is None:
+        return False
+    
+    if bcrypt.checkpw(passwd.encode('utf-8'), bd_passwd):
         sol = True
     con.close()
-    
-    """for _ in cur.execute(f"select * from users "
-                         f"where "
-                         f"alias like '{alias}' and "
-                         f"passwd like '{passwd}' ;"):
-        sol = True
-    con.close() """
     return sol
 
 
@@ -82,14 +111,14 @@ def update(alias, passwd, n_alias, n_passwd) -> bool:
     :param n_passwd: nueva password del usuario
     :return: True/False si se ha modificado con exito o no
     """
+    
 
-    if not login(alias, passwd):
+    if login(alias, passwd) is False:
         return False
 
     final = True
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
-
     cur.execute(f"select * from users where alias like '{n_alias}';")
     if cur.fetchone() is not None:
         print("ERROR: nuevo alias ya registrado")
@@ -97,18 +126,20 @@ def update(alias, passwd, n_alias, n_passwd) -> bool:
     
     try:
         if n_alias != '' and cur.fetchone() is None:
-            cur.execute(f"update users set alias = '{n_alias}' where alias like '{alias}';")
-            alias = n_alias
+            sql_command = "UPDATE users SET alias = ? WHERE alias = ?"
+            values = (n_alias, alias)
+            cur.execute(sql_command, values)
+            con.commit()
             print("actualizado alias")
         if n_passwd != '':
-            hashed_password = bcrypt.hashpw(n_passwd.encode('utf-8'), salt)
-            n_passwd = hashed_password
+            hn_passwd = bcrypt.hashpw(n_passwd.encode('utf-8'), bcrypt.gensalt())
             sql_command = "UPDATE users SET passwd = ? WHERE alias = ?"
-            values = (hashed_password, alias)
+            values = (hn_passwd, n_alias)
             cur.execute(sql_command, values)
+            con.commit()
             print("actualizado passwd")
 
-        con.commit()
+
         print(f"ACTUALIZADO CON EXITO ")
     except Exception as e:
         print("ERROR al actualizar, usuario no existe o el nuevo nombre ya esta escogido", e)
@@ -216,12 +247,13 @@ if __name__ == '__main__':
 
     PORT = int(argv[1])
     DATABASE = argv[2]
-
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS users (alias TEXT, passwd TEXT, nivel INT, ef INT, ec INT);")
     con.commit()
     con.close()
+
+    app.run(host=IP, port=PORT, debug=True)
 
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((IP, PORT))

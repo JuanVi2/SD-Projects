@@ -5,12 +5,16 @@ import traceback
 import random
 import socket
 import re
+import bcrypt
+import requests
 
 from sys import argv
 
 from kafka import KafkaConsumer, KafkaProducer
 
 HEADER = 10
+
+
 
 """RECIBE POR LA LINEA DE PARAMETROS:
 IP y puerto del AA_Engine
@@ -279,6 +283,7 @@ def registra_perfil(ip, port) -> bool:
     print("CONEXION FINALIZADA")
     return ret
 
+
 def actualiza_perfil(ip, port) -> bool:
     print("CREDENCIALES ACTUALES")
     alias = input("alias: ")
@@ -332,12 +337,34 @@ def filtra(args: list) -> bool:
 def login_api():
     pass
 
-def registro_api():
-    pass
+def registro_api(alias, passwd, nivel, ef, ec):
+    data = {'alias': alias, 'passwd': passwd, 'nivel': nivel, 'ef': ef, 'ec': ec}
+    
+    try:
+        headers = {'Content-type': 'application/json'}
+        r = requests.post(f"http://{ip_r}:{port_r}/register", json=data, headers=headers)
+        if r.status_code == 200:
+            print("PERFIL REGISTRADO CON EXITO")
+        else:
+            print("NO SE HA PODIDO REGISTRAR, EL USUARIO YA EXISTE")
+    except Exception as e:
+        print("ERROR: ", e)
 
 
-def update_api():
-    pass
+
+
+def update_api(alias, passwd, n_alias, n_passwd):
+    data = {'alias': alias, 'passwd': passwd, 'n_alias': n_alias, 'n_passwd': n_passwd}
+    try:
+        headers = {'Content-type': 'application/json'}
+        r = requests.post(f"http://{ip_r}:{port_r}/update", json=data, headers=headers)
+        if r.status_code == 200:
+            print("PERFIL ACTUALIZADO CON EXITO")
+        else:
+            print("NO SE HA PODIDO ACTUALIZAR")
+    except Exception as e:
+        print("ERROR: ", e)
+
 
 
 
@@ -391,12 +418,23 @@ if __name__ == '__main__':
             if mode == 'socket':
                 actualiza_perfil(ip_r, port_r)
             elif mode == 'api':
-                update_api()
+                print("CREDENCIALES ACTUALES")
+                alias = input("alias: ")
+                passwd = input("passwd: ")
+                print("INTRODUCE LOS DATOS NUEVOS. # No rellenes los datos que no quieras cambiar")
+                n_alias = input("alias: ")
+                n_passwd = input("passwd: ")
+                update_api(alias, passwd, n_alias, n_passwd)
         elif command == 'r':
             if mode == 'socket':
                 registra_perfil(ip_r, port_r)
             elif mode == 'api':
-                registro_api()
+                alias = input("alias: ")
+                passwd = input("passwd: ")
+                nivel = input("nivel: ")
+                ef = input("ef: ")
+                ec = input("ec: ")
+                registro_api(alias, passwd, nivel, ef, ec)
         elif command == 'exit':
             running = False
         else:
