@@ -8,13 +8,24 @@ import bcrypt
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from flask import Flask, request, jsonify
+import logging
 
 app = Flask(__name__)
+
+logging.basicConfig(filename='auditoria.txt', level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 
 registry = []
 
 IP = socket.gethostbyname(socket.gethostname())
-MAX_CONEXIONES = 2
+MAX_CONEXIONES = 15
+
+def registrar_auditoria(ip, alias, accion, descripcion):
+    mensaje = f'IP: {ip} | Alias: {alias} |Acción: {accion} | Descripción: {descripcion}'
+    logging.info(mensaje)
+
+def registrar_error_auditoria(alias, accion, descripcion):
+    mensaje = f'Alias: {alias} |Acción: {accion} | Descripción: {descripcion}'
+    logging.error(mensaje)
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -25,6 +36,7 @@ def register():
     ef = data['ef']
     ec = data['ec']
     print(f"REGISTRO alias: {alias} passwd: {passwd} nivel: {nivel} ef: {ef} ec: {ec} ")
+    registrar_auditoria(request.remote_addr, alias, 'Alta', 'Registro de usuario')
     resultado = register(alias, passwd, nivel, ef, ec)
     if resultado:
         return jsonify({"status": "ok"})
@@ -38,12 +50,24 @@ def update():
     passwd = data['passwd']
     n_alias = data['n_alias']
     n_passwd = data['n_passwd']
+    registrar_auditoria(request.remote_addr, alias, 'Modificación', 'Modificación de usuario')
     resultado = update(alias, passwd, n_alias, n_passwd)
     if resultado:
         return jsonify({"status": "ok"})
     else:
         return jsonify({"status": "no"})
 
+@app.route('/delete', methods=['POST'])
+def delete():
+    data = request.get_json()
+    alias = data['alias']
+    passwd = data['passwd']
+    registrar_auditoria(request.remote_addr, alias, 'Baja', 'Baja de usuario')
+    resultado = delete(alias, passwd)
+    if resultado:
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"status": "no"})
 
 def register(alias: str, passwd: str, nivel: int, ef: int, ec: int) -> bool:
     """
@@ -61,6 +85,7 @@ def register(alias: str, passwd: str, nivel: int, ef: int, ec: int) -> bool:
     cur.execute(f"select * from users where alias like '{alias}';")
     if cur.fetchone() is not None:
         print("ERROR: alias ya registrado")
+        registrar_error_auditoria(alias, 'Alta', 'Alias ya registrado')
         return False
     
     hpasswd = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt())
@@ -73,6 +98,7 @@ def register(alias: str, passwd: str, nivel: int, ef: int, ec: int) -> bool:
         print(f"REGISTRADO CON EXITO ")
     except Exception as e:
         print("ERROR al registrar", e)
+        registrar_error_auditoria(alias, 'Alta', 'Error al registrar')
         final = False
     finally:
         con.close()
@@ -101,6 +127,29 @@ def login(alias, passwd):
     con.close()
     return sol
 
+def delete(alias, passwd):
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    if login(alias, passwd) is False:
+        print("ERROR: usuario no existe")
+        registrar_error_auditoria(alias, 'Baja', 'Usuario no existe')
+        return False
+    try:
+        sql_command = "DELETE FROM users WHERE alias = ?"
+        values = (alias,)
+        cur.execute(sql_command, values)
+        con.commit()
+        print(f"ELIMINADO CON EXITO ")
+    except Exception as e:
+        print("ERROR al eliminar", e)
+        registrar_error_auditoria(alias, 'Baja', 'Error al eliminar')
+        return False
+    finally:
+        con.close()
+        return True
+    
+
+
 
 
 def update(alias, passwd, n_alias, n_passwd) -> bool:
@@ -122,6 +171,7 @@ def update(alias, passwd, n_alias, n_passwd) -> bool:
     cur.execute(f"select * from users where alias like '{n_alias}';")
     if cur.fetchone() is not None:
         print("ERROR: nuevo alias ya registrado")
+        registrar_error_auditoria(alias, 'Modificación', 'Nuevo alias ya registrado')
         return False
     
     try:
@@ -143,6 +193,7 @@ def update(alias, passwd, n_alias, n_passwd) -> bool:
         print(f"ACTUALIZADO CON EXITO ")
     except Exception as e:
         print("ERROR al actualizar, usuario no existe o el nuevo nombre ya esta escogido", e)
+        registrar_error_auditoria(alias, 'Modificación', 'Error al actualizar')
         final = False
     finally:
         con.close()
@@ -177,13 +228,20 @@ def handle_client(conn, addr):
         ef = credentials.split(":")[4]
         ec = credentials.split(":")[5]
         print(f"REGISTRO alias: {alias} passwd: {passwd} nivel: {nivel} ef: {ef} ec: {ec} ")
+        registrar_auditoria(addr, alias, 'Alta', 'Registro')
         resultado = register(alias, passwd, nivel, ef, ec)
     if modo == 'u':
         alias = credentials.split(":")[1]
         passwd = credentials.split(":")[2]
         n_alias = credentials.split(":")[3]
         n_passwd = credentials.split(":")[4]
+        registrar_auditoria(addr, alias, 'Modificacion', 'Update')
         resultado = update(alias, passwd, n_alias, n_passwd)
+    if modo == 'd':
+        alias = credentials.split(":")[1]
+        passwd = credentials.split(":")[2]
+        registrar_auditoria(addr, alias, 'Baja', 'Delete')
+        resultado = delete(alias, passwd)
 
     if resultado:
 
@@ -195,9 +253,7 @@ def handle_client(conn, addr):
 
 
 def repartidor(server):
-    """
-    :param server: servidor
-    """
+
 
     server.listen()
     print(f"ESCUCHANDO EN {IP}:{PORT}")
@@ -220,13 +276,12 @@ def repartidor(server):
 
 
 
-
 def filtra(args: list) -> bool:
     """
     Indica si el formato de los argumentos es el correcto
     :param args: Argumentos del programa
     """
-    if len(args) != 3:
+    if len(args) != 4:
         print("Numero incorrecto de argumentos")
         return False
 
@@ -237,24 +292,10 @@ def filtra(args: list) -> bool:
         return False
     return True
 
-
-if __name__ == '__main__':
-    if not filtra(argv):
-        print("ERROR: Argumentos incorrectos")
-        print("Usage: AA_Registry.py <puerto> <fichero de base de datos>")
-        print("Example: AA_Registry.py 5054 players.db")
-        exit()
-
-    PORT = int(argv[1])
-    DATABASE = argv[2]
-    con = sqlite3.connect(DATABASE)
-    cur = con.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS users (alias TEXT, passwd TEXT, nivel INT, ef INT, ec INT);")
-    con.commit()
-    con.close()
-
-    app.run(host=IP, port=PORT, debug=True)
-
+"""
+Funcion que se encarga de manejar las peticiones de los clientes
+"""
+def handle_socket_requests():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((IP, PORT))
     try:
@@ -263,4 +304,34 @@ if __name__ == '__main__':
         print("ERROR: ", e)
     finally:
         serversocket.close()
+
+def handle_api_requests():
+    app.run(host=IP, port=PORT_API)
+
+
+if __name__ == '__main__':
+    if not filtra(argv):
+        print("ERROR: Argumentos incorrectos")
+        print("Usage: AA_Registry.py <puerto_socket> <puerto_api> <fichero de base de datos>")
+        print("Example: AA_Registry.py 5054 5055 players.db")
+        exit()
+
+    PORT = int(argv[1])
+    PORT_API = int(argv[2])
+    DATABASE = argv[3]
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users (alias TEXT, passwd TEXT, nivel INT, ef INT, ec INT);")
+    con.commit()
+    con.close()
+    
+    socket_thread = threading.Thread(target=handle_socket_requests)
+    api_thread = threading.Thread(target=handle_api_requests)
+
+    socket_thread.start()
+    api_thread.start()
+
+    
+
+   
 

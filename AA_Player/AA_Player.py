@@ -283,6 +283,27 @@ def registra_perfil(ip, port) -> bool:
     print("CONEXION FINALIZADA")
     return ret
 
+def eliminar_perfil(ip, port) -> bool:
+    alias = input("alias: ")
+    passwd = input("passwd: ")
+    credentials = f"d:{alias}:{passwd}"
+    ret = False
+    try:
+        cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        cliente.connect((ip, port))
+        ret = comunicacion(cliente, credentials)
+        if ret:
+            print("PERFIL ELIMINADO CON EXITO")
+        else:
+            print("NO SE HA PODIDO ELIMINAR, EL USUARIO NO EXISTE")
+    except Exception as e:
+        print("ERROR: ", e)
+    finally:
+        if 'cliente' in locals():
+            cliente.close()
+
+    print("CONEXION FINALIZADA")
+    return ret
 
 def actualiza_perfil(ip, port) -> bool:
     print("CREDENCIALES ACTUALES")
@@ -342,7 +363,7 @@ def registro_api(alias, passwd, nivel, ef, ec):
     
     try:
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f"http://{ip_r}:{port_r}/register", json=data, headers=headers)
+        r = requests.post(f"http://{ip_r}:{5055}/register", json=data, headers=headers)
         if r.status_code == 200:
             print("PERFIL REGISTRADO CON EXITO")
         else:
@@ -351,13 +372,23 @@ def registro_api(alias, passwd, nivel, ef, ec):
         print("ERROR: ", e)
 
 
-
+def delete_api(alias, passwd):
+    data = {'alias': alias, 'passwd': passwd}
+    try:
+        headers = {'Content-type': 'application/json'}
+        r = requests.post(f"http://{ip_r}:{5055}/delete", json=data, headers=headers)
+        if r.status_code == 200:
+            print("PERFIL ELIMINADO CON EXITO")
+        else:
+            print("NO SE HA PODIDO ELIMINAR")
+    except Exception as e:
+        print("ERROR: ", e)
 
 def update_api(alias, passwd, n_alias, n_passwd):
     data = {'alias': alias, 'passwd': passwd, 'n_alias': n_alias, 'n_passwd': n_passwd}
     try:
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f"http://{ip_r}:{port_r}/update", json=data, headers=headers)
+        r = requests.post(f"http://{ip_r}:{5055}/update", json=data, headers=headers)
         if r.status_code == 200:
             print("PERFIL ACTUALIZADO CON EXITO")
         else:
@@ -376,6 +407,7 @@ def pintaMenu(mode):
     l       : Inicia sesion de usuario para partida
     r       : Registra un nuevo usuario
     u       : Actualiza los datos de un usuario
+    d       : Elimina un usuario
     exit    : Salir
     """)
 
@@ -435,6 +467,13 @@ if __name__ == '__main__':
                 ef = input("ef: ")
                 ec = input("ec: ")
                 registro_api(alias, passwd, nivel, ef, ec)
+        elif command == 'd':
+            if mode == 'socket':
+                eliminar_perfil(ip_r, port_r)
+            elif mode == 'api':
+                alias = input("alias: ")
+                passwd = input("passwd: ")
+                delete_api(alias, passwd)
         elif command == 'exit':
             running = False
         else:
