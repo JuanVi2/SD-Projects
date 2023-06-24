@@ -54,3 +54,16 @@
 2023-06-24 18:17:43,990 | INFO | IP: ('192.168.22.0', 50458) | Alias: prueba3 |Acción: Alta | Descripción: Registro
 2023-06-24 18:17:51,797 | INFO | IP: 192.168.22.0 | Alias: prueba3 |Acción: Baja | Descripción: Baja de usuario
 2023-06-24 18:17:52,071 | INFO | 192.168.22.0 - - [24/Jun/2023 18:17:52] "POST /delete HTTP/1.1" 200 -
+2023-06-24 19:33:25,780 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 19:33:25,781 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 19:33:45,259 | INFO | IP: ('192.168.22.0', 52307) | Alias: rompe |Acción: Alta | Descripción: Registro
+2023-06-24 19:33:45,263 | ERROR | Alias: rompe |Acción: Alta | Descripción: Alias ya registrado
+2023-06-24 19:33:58,046 | INFO | IP: ('192.168.22.0', 52312) | Alias: rompetechos |Acción: Alta | Descripción: Registro
+2023-06-24 19:36:28,437 | INFO | IP: 192.168.22.0 | Alias: rompetechos |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 19:36:28,716 | INFO | 192.168.22.0 - - [24/Jun/2023 19:36:28] "POST /delete HTTP/1.1" 200 -
+2023-06-24 19:39:06,858 | INFO | IP: ('192.168.22.0', 52457) | Alias: rompe |Acción: Baja | Descripción: Delete
+2023-06-24 19:39:16,528 | INFO | IP: 192.168.22.0 | Alias: rompe |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 19:39:16,804 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:16] "POST /register HTTP/1.1" 200 -
+2023-06-24 19:39:22,767 | INFO | IP: 192.168.22.0 | Alias: rompe |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 19:39:23,077 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:23] "POST /delete HTTP/1.1" 200 -

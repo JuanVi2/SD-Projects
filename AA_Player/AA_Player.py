@@ -7,13 +7,15 @@ import socket
 import re
 import bcrypt
 import requests
-
+import ssl
+import urllib3
 from sys import argv
 
 from kafka import KafkaConsumer, KafkaProducer
 
 HEADER = 10
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 """RECIBE POR LA LINEA DE PARAMETROS:
@@ -363,7 +365,7 @@ def registro_api(alias, passwd, nivel, ef, ec):
     
     try:
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f"http://{ip_r}:{5055}/register", json=data, headers=headers)
+        r = requests.post(f"https://{ip_r}:{5055}/register", json=data, headers=headers, verify=False)
         if r.status_code == 200:
             print("PERFIL REGISTRADO CON EXITO")
         else:
@@ -376,7 +378,7 @@ def delete_api(alias, passwd):
     data = {'alias': alias, 'passwd': passwd}
     try:
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f"http://{ip_r}:{5055}/delete", json=data, headers=headers)
+        r = requests.post(f"https://{ip_r}:{5055}/delete", json=data, headers=headers, verify=False)
         if r.status_code == 200:
             print("PERFIL ELIMINADO CON EXITO")
         else:
@@ -388,7 +390,7 @@ def update_api(alias, passwd, n_alias, n_passwd):
     data = {'alias': alias, 'passwd': passwd, 'n_alias': n_alias, 'n_passwd': n_passwd}
     try:
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f"http://{ip_r}:{5055}/update", json=data, headers=headers)
+        r = requests.post(f"https://{ip_r}:{5055}/update", json=data, headers=headers, verify=False)
         if r.status_code == 200:
             print("PERFIL ACTUALIZADO CON EXITO")
         else:

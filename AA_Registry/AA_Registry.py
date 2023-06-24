@@ -9,8 +9,12 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from flask import Flask, request, jsonify
 import logging
+import ssl
 
 app = Flask(__name__)
+
+cert = 'cert.pem'
+key = 'key.pem'
 
 logging.basicConfig(filename='auditoria.txt', level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 
@@ -306,7 +310,7 @@ def handle_socket_requests():
         serversocket.close()
 
 def handle_api_requests():
-    app.run(host=IP, port=PORT_API)
+    app.run(ssl_context= ('cert.pem', 'key.pem'), host=IP, port=PORT_API)
 
 
 if __name__ == '__main__':
