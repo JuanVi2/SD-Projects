@@ -12,6 +12,7 @@ import socket
 import json
 import os
 import traceback
+import requests
 
 import kafka
 
@@ -142,61 +143,79 @@ def incluir_jugadores(mapa, jugador):
 
 class TiemposMapa(threading.Thread):
 
-    def __init__(self, ip, port):
+    def __init__(self):
         threading.Thread.__init__(self)
         self.stop_event = threading.Event()
-        self.ip = ip
-        self.port = port
+        self.ciudades = "ciudades.txt"
+        self.api_key_file = "./api_key"
 
     def stop(self):
         self.stop_event.set()
 
-    def consumir(self, consumer) -> None:
-        for msg in consumer:
-            print("Recibiendo mensaje de tiempos")
-            global TEMPERATURAS
-            TEMPERATURAS = msg.value['ciudades']
-            
-            print('Estas son las temperaturas elegidas: ')
-            print(TEMPERATURAS)
-            break
+    def setApiKey(self):
+        with open(self.api_key_file, "r") as f:
+            self.api_key = f.readline().strip()
+            f.close()
+
+
+    def getCiudades(self):
+        ciudades = []
+        f = open(self.ciudades, "r")
+        l = f.readline().strip()
+        while l != "":
+            ciudades.append(l)
+            l = f.readline().strip()
+        f.close()
+        return ciudades
+    
+    def elegirCiudades(self):
+        ciudades = self.getCiudades()
+        ciudades_aleatorias = random.sample(ciudades, 4)
+        print("Las ciudades elegidas son las siguientes: ")
+        print(ciudades_aleatorias)
+        return ciudades_aleatorias
+
+
+    def consumir(self) -> None:
+        url = "https://api.openweathermap.org/data/2.5/weather"
+        ciudades = self.elegirCiudades()
+        global TEMPERATURAS
+        for ciudad in ciudades:
+            time.sleep(1)
+            try:
+                params = {'q': ciudad, 'appid': self.api_key}
+                print(url)
+                fu = f"https://api.openweathermap.org/data/2.5/weather?q={ciudad}\&appid={self.api_key}"
+                print(params)
+                response = requests.get(url, params=params)
+                if response.status_code == 200:
+                    respuesta = response.json()
+                    temperatura = respuesta["main"]["temp"] - 273.15
+                    TEMPERATURAS.append(temperatura)
+                    
+                    print(f"Temperatura de {ciudad} es {temperatura}", temperatura)
+                else:
+                    print(f"Error al recuperar tiempos {ciudad}")
+            except Exception as e:
+                print("ERROR al obtener la temperatura", e)
+                traceback.print_exc()
+        print("Temperaturas obtenidas")
+        print(TEMPERATURAS)
             
 
     def run(self):
-        while (not self.stop_event.is_set()) and running and len(TEMPERATURAS) == 0:
-            try:
-                producer = KafkaProducer(bootstrap_servers=f'{self.ip}:{self.port}',
-                                        value_serializer=lambda x: 
-                                        dumps(x).encode('utf-8'))
-                data = {'Entrada': True}
-                producer.send("Acceso", value=data)
-                consumer = KafkaConsumer('Temperaturas',
-                                    bootstrap_servers=f'{self.ip}:{self.port}',
-                                    auto_offset_reset='earliest',
-                                    enable_auto_commit=True,
-                                    group_id='Weather-group',
-                                    value_deserializer=lambda x: loads(x.decode('utf-8')))
-                
-                print("Insertando temperaturas")
-                
-                self.consumir(consumer)
-                sleep(1)
-
-                data = {'Entrada': False}
-                producer.send("Acceso", value=data)
-                print("Temperaturas recibidas:")
-                print(TEMPERATURAS)
-                for sublista in TEMPERATURAS:
-                    longitud = len(TEMPERATURAS)
-                    print(f"La longitud de la sublista {sublista} es {longitud}.")
-                
-            except Exception as e:
-                print("Error al solicitar los tiempos de las ciudades:", e)
-                traceback.print_exc()
-            finally:
-                if 'consumer' in locals():
-                    consumer.close()
-                print("Cerrando conexión con el servidor de tiempos")
+        print("Obteniendo temperaturas")
+        try:
+            self.setApiKey()
+            while (not self.stop_event.is_set()):
+                self.consumir()
+                if(len(TEMPERATURAS) == 4):
+                    self.stop_event.set()
+        except Exception as e:
+            print("ERROR al obtener las temperaturas :", e)
+            traceback.print_exc()
+        finally:
+            print("Final de servidor de temperatura")
                 
 class AtieneVisitante(threading.Thread):
     """
@@ -216,22 +235,19 @@ class AtieneVisitante(threading.Thread):
 
     def consumir(self, consumer, producer):
         global MAPA
+        global JUGADORES
         while (not self.stop_event.is_set()) and running:
-            """
-            if time.time() - anterior > 5:
-                print(f"AtieneVisitante envio de mapa para {self.topic} por despecho")
-                producer.send(self.topic + 'out', str(MAPA).encode())
-            """
+            
             for msg in consumer:
                 print(self.topic, " : ", msg.value)
                 try:
                     if msg.value == b'no' or not running:
-                        del (NPCS[self.topic])
-                        print("SALE EL VISITANTE: ",self.topic)
+                        del (JUGADORES[self.topic])
+                        print("JUGADOR MUERTO: ",self.topic)
                         self.stop_event.set()
                         self.stop()
                         return
-                    NPCS[self.topic] = msg.value
+                    JUGADORES[self.topic] = msg.value
                     print(f"AtieneVisitante envio de mapa para {self.topic}")
                     producer.send(self.topic + 'out', str(MAPA).encode())
                 except Exception as e:
@@ -344,7 +360,7 @@ class AccesManager(threading.Thread):
             return final
 
     def createTopic(self, topic):
-        consumer = kafka.KafkaConsumer(group_id='test', bootstrap_servers=f'{self.ip}:{self.port}')
+        consumer = kafka.KafkaConsumer(group_id='test2', bootstrap_servers=f'{self.ip}:{self.port}')
         tops = consumer.topics()
         if (topic + 'in' not in tops) and (topic + 'out' not in tops):
             admin = KafkaAdminClient(bootstrap_servers=f'{self.ip}:{self.port}')
@@ -364,37 +380,42 @@ class AccesManager(threading.Thread):
                     passwd = msg.value.decode().split(".")[1]
                     if self.login(alias, passwd) and len(manejadores) < LIMITE:
                         print(f"Login Exito {alias} {passwd}")
+                        JUGADORES.append(msg.value.decode())
                         topic = alias+str(int(time.time()))
                         self.createTopic(topic)
                         manejadores.append(AtieneVisitante(self.ip, self.port, topic))
                         manejadores[-1].start()
                         time.sleep(1)
+
                         producer.send("accesoout", topic.encode())
                     else:
                         time.sleep(1)
                         print(f"Login Fallo {alias} {passwd}")
                         producer.send("accesoout", b'no')
                 except Exception as e:
-                    print("ERROR EN AccesManager consumir", e)
+                    print("ERROR EN AccesManager", e)
                     traceback.print_exc()
 
     def run(self):
-        print("INICIO LectorMovimientos")
+        print("Escuchando peticiones de jugadores")
         try:
-            consumer = KafkaConsumer(bootstrap_servers=f'{self.ip}:{self.port}',
-                                     auto_offset_reset='latest',
-                                     consumer_timeout_ms=100)
-            consumer.subscribe(['accesoin'])
+            consumer = KafkaConsumer('accesoin',
+                                     bootstrap_servers=f'{self.ip}:{self.port}',
+                                     consumer_timeout_ms=100,
+                                     value_deserializer=lambda x: loads(x.decode('utf-8')))
+            
 
-            producer = KafkaProducer(bootstrap_servers=f'{self.ip}:{self.port}')
+            producer = KafkaProducer(bootstrap_servers=f'{self.ip}:{self.port}',
+                                     value_serializer=lambda x: 
+                                        dumps(x).encode('utf-8'))
             self.consumir(consumer, producer)
         except Exception as e:
-            print("ERROR EN LectorMovimientos :", e)
+            print("ERROR al escuchar las peticiones de los jugadores :", e)
             traceback.print_exc()
         finally:
             if 'consumer' in locals():
                 consumer.close()
-            print("FIN LectorMovimientos")
+            print("Cerrando las peticones de jugadores")
 
 class ObtenerNPC(threading.Thread):
 
@@ -588,7 +609,8 @@ if __name__ == "__main__":
 
     running = True
     nombre_archivo = 'mapa.txt'
-    tiempo_juego = 1
+    tiempo_juego = 100
+    tiempo_ïnicial = time.time()
     JUGADORES = {}
     
     TEMPERATURAS = []
@@ -601,15 +623,12 @@ if __name__ == "__main__":
                           int(argv[3].split(':')[1]),
                           argv[4]),
         GuardarMapa(argv[4]),
-        TiemposMapa(argv[3].split(':')[0],
-                        int(argv[3].split(':')[1])),
+        TiemposMapa(),
         ObtenerNPC(argv[3].split(':')[0],
                         int(argv[3].split(':')[1])),
-        DetectarMovimientosNPC(argv[3].split(':')[0],
-                        int(argv[3].split(':')[1]))
-        
-        
-        
+        AccesManager(argv[3].split(':')[0],
+                     int(argv[3].split(':')[1]),
+                     argv[4]) 
 
     ]
     '''
@@ -628,12 +647,12 @@ if __name__ == "__main__":
         c.start()
     #    os.system("python3 ./Api_Engine.py")
 
-    while running:
+    while running and time.time() - tiempo_ïnicial < tiempo_juego:
         pass
         
         
 
-    print("Terminando" )  
+    print("Ha terminado el tiempo de juego")  
     time.sleep(1)
 
     for c in clases:
@@ -653,32 +672,8 @@ if __name__ == "__main__":
         'ec': 0,
         'ef': 0,
     }
-    posicion = [random.randint(0, 19), random.randint(0, 19)]
-
-
-
 
     #Esto lo tengo que llamar en nada que reciba un mensaje del jugador
     matriz = limpiar_posicion(MAPA, jugador['alias'])
-    
-    print(matriz)
 
-    tiempo_ïnicial = time.time()
-    #Este bucle es el que se ejecuta hasta que termine el juego. En caso de que no quede solo un jugador vivo
-    while time.time() - tiempo_ïnicial < tiempo_juego:
-        print(matriz)
-        time.sleep(1)
-        
-
-    print("Ha terminado el tiempo de juego")
-
-
-    '''producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
-                            value_serializer=lambda x: 
-                            dumps(x).encode('utf-8'))
-    '''
-    '''for e in range(1000):
-        data = {'number' : e}
-        producer.send('engine-prueba', value=data)
-        sleep(5) 
-    '''
+   
