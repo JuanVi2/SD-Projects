@@ -18,6 +18,7 @@
 <script>
 import axios from 'axios';
 
+
 export default {
   data() {
     return {
@@ -26,11 +27,11 @@ export default {
   },
   mounted() {
     this.fetchMap();
-    setTimeout(this.$forceUpdate(), 0.01);
+    setTimeout(this.$forceUpdate(), 5.00);
   },
   methods: {
     fetchMap() {
-      axios.get('http://localhost:5500/map')
+      axios.get('https://192.168.100.244:443/map')
         .then(response => {
           this.map = response.data;
         })

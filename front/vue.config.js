@@ -3,8 +3,17 @@ module.exports = defineConfig({
   transpileDependencies: true
 })
 
+const fs = require('fs');
+const path = require('path');
+
 module.exports = {
   devServer: {
-    https: true
+    server: {
+      type: 'https',
+      options: {
+        key: fs.readFileSync(path.resolve(__dirname, '../AA_Engine/key.pem')),
+        cert: fs.readFileSync(path.resolve(__dirname, '../AA_Engine/cert.pem'))
+      }
+    }
   }
-}
+};
