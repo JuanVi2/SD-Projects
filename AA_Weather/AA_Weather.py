@@ -38,9 +38,11 @@ def run(producer: KafkaProducer) -> None:
             temperaturas.append((ciudad, temperatura))
     
     ciudades_aleatorias = random.sample(temperaturas, 4)
+    print(ciudades_aleatorias)
+
     data = {'ciudades' : ciudades_aleatorias}
     producer.send('Temperaturas', value=data)
-
+   
 
 if __name__ == '__main__':
     if not comprobar(argv):
@@ -60,29 +62,28 @@ if __name__ == '__main__':
         consumer = KafkaConsumer(
                                     'Acceso',
                                     bootstrap_servers=f'{ip}:{port}',
-                                    auto_offset_reset='earliest',
+                                    auto_offset_reset='latest',
                                     enable_auto_commit=True,
                                     group_id='Weather-group',
                                     value_deserializer=lambda x: loads(x.decode('utf-8')))
         
         while not(encontrado) and running:
             for message in consumer:
-                if message.value == False:
+                if message.value['Entrada'] == False:
                     value = message.value
                     print(f"Mensaje recibido: valor: {value}")
                     
                 else:
-                    encontrado = True
                     value = message.value
+                    entontrado = True
                     print(f"Mensaje recibido: valor: {value}")
+                    break
                     
-
-            print(f"Mensaje recibido: valor: {value}")
 
             producer = KafkaProducer(bootstrap_servers=f'{ip}:{port}',
                                         value_serializer=lambda x: 
                                         dumps(x).encode('utf-8'))
-            if(value == True):
+            if(value['Entrada'] == True):
                 run(producer)
             
     except Exception as e:
