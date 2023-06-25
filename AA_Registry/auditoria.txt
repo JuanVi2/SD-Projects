@@ -67,3 +67,8 @@
 2023-06-24 19:39:16,804 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:16] "POST /register HTTP/1.1" 200 -
 2023-06-24 19:39:22,767 | INFO | IP: 192.168.22.0 | Alias: rompe |Acción: Baja | Descripción: Baja de usuario
 2023-06-24 19:39:23,077 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:23] "POST /delete HTTP/1.1" 200 -
+2023-06-25 10:49:01,278 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-25 10:49:01,278 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 10:56:59,296 | INFO | IP: ('192.168.22.0', 54342) | Alias: ponce |Acción: Alta | Descripción: Registro
+2023-06-25 10:57:08,161 | INFO | IP: ('192.168.22.0', 54346) | Alias: juanvi |Acción: Alta | Descripción: Registro

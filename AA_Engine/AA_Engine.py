@@ -13,7 +13,7 @@ import json
 import os
 import traceback
 import requests
-
+import bcrypt
 import kafka
 
 def leer_matriz_desde_archivo(nombre_archivo):
@@ -37,7 +37,7 @@ def pelea_npc(enemigo, jugador):
     nivel_enemigo = enemigo['nivel']
     
     if(nivel_enemigo < nivel_jugador):
-        matriz[posicion[0]][posicion[1]] = jugador['alias'].lower().strip()[0]
+        MAPA[jugador['posicion'][0], jugador['posicion'][1]] = jugador['alias'].lower().strip()[0]
         enemigo['nivel'] = -1
         print("Jugador gana")
     elif(nivel_enemigo > nivel_jugador):
@@ -48,7 +48,7 @@ def comprobar_pelea(enemigo, jugador):
     nivel_jugador = obtener_poder(jugador)
     nivel_enemigo = obtener_poder(enemigo)
     if(nivel_enemigo < nivel_jugador):
-        matriz[posicion[0]][posicion[1]] = jugador['alias'].lower().strip()[0]
+        MAPA[jugador['posicion'][0], jugador['posicion'][1]] = jugador['alias'].lower().strip()[0]
         enemigo['nivel'] = -1
         print("Jugador gana")
     elif(nivel_enemigo > nivel_jugador):
@@ -202,7 +202,7 @@ class TiemposMapa(threading.Thread):
         print("Temperaturas obtenidas")
         print(TEMPERATURAS)
             
-
+"""
     def run(self):
         print("Obteniendo temperaturas")
         try:
@@ -216,8 +216,8 @@ class TiemposMapa(threading.Thread):
             traceback.print_exc()
         finally:
             print("Final de servidor de temperatura")
-                
-class AtieneVisitante(threading.Thread):
+"""         
+class Partida(threading.Thread):
     """
     Clase Thread que se conecta cada 3 segundos al servidor de tiempos que le
     hayamos indicado.
@@ -248,14 +248,19 @@ class AtieneVisitante(threading.Thread):
                         self.stop()
                         return
                     JUGADORES[self.topic] = msg.value
-                    print(f"AtieneVisitante envio de mapa para {self.topic}")
-                    producer.send(self.topic + 'out', str(MAPA).encode())
+                    print(f"Partida envio de mapa para {self.topic}")
+                    print(JUGADORES)
+                    data = {
+                        'mapa': MAPA,
+                        'posicion': JUGADORES[self.topic]['posicion'],
+                    }
+                    producer.send(self.topic + 'out', data.encode())
                 except Exception as e:
-                    print("ERROR EN AtieneVisitante consumir", e)
+                    print("ERROR EN Partida consumir", e)
                     traceback.print_exc()
 
     def run(self):
-        print("INICIO AtieneVisitante " + self.topic)
+        print("INICIO PARTIDA " + self.topic)
         try:
             consumer = KafkaConsumer(bootstrap_servers=f'{self.ip}:{self.port}',
                                      auto_offset_reset='latest',
@@ -339,25 +344,30 @@ class AccesManager(threading.Thread):
 
     def login(self, alias, passwd):
         final = False
-        passwd = hashlib.sha256(passwd.encode()).hexdigest()
-        con = sqlite3.connect(self.database)
+        con = sqlite3.connect(DATABASE)
         cur = con.cursor()
-        sql_comand = f"select * from users where " \
-                     f"alias like '{alias}' and " \
-                     f"passwd like '{passwd}';"
-        print("haciendo login: ", sql_comand)
-        try:
-            cur.execute(sql_comand)
-            for _ in cur.execute(sql_comand):
-                final = True
-                print(f"LOGIN CON EXITO ")
-            con.commit()
-        except Exception as e:
-            print("ERROR al registrar", e)
-            final = False
-        finally:
-            con.close()
-            return final
+        for row in cur.execute(f"select passwd from users where alias like '{alias}';"):
+            bd_passwd = row[0]
+    
+        if bd_passwd is None:
+            print("ERROR al hacer login, no existe el usuario")
+            return False
+    
+        if bcrypt.checkpw(passwd.encode('utf-8'), bd_passwd):
+            final = True
+            print(f"LOGIN CON EXITO ")
+        else:
+            print(f"LOGIN INCORRECTO ")
+        con.close()
+        return final
+
+    def obtenerPersonaje(self, alias):
+        con = sqlite3.connect(DATABASE)
+        cur = con.cursor()
+        for row in cur.execute(f"select * from users where alias like '{alias}';"):
+            personaje = row
+        con.close()
+        return personaje
 
     def createTopic(self, topic):
         consumer = kafka.KafkaConsumer(group_id='test2', bootstrap_servers=f'{self.ip}:{self.port}')
@@ -376,18 +386,19 @@ class AccesManager(threading.Thread):
                 if len(manejadores) >= LIMITE:
                     producer.send("accesoout", b'no')  # todo poner otro codgio para cunado hay demansiados
                 try:
-                    alias = msg.value.decode().split(".")[0]
-                    passwd = msg.value.decode().split(".")[1]
+                    alias = msg.value.split(".")[0]
+                    passwd = msg.value.split(".")[1]
                     if self.login(alias, passwd) and len(manejadores) < LIMITE:
                         print(f"Login Exito {alias} {passwd}")
-                        JUGADORES.append(msg.value.decode())
+                        jugador = self.obtenerPersonaje(alias)
+                        JUGADORES.append({'alias': jugador[0], 'password': jugador[1], 'posicion': None, 'nivel': jugador[2], 'ec': jugador[3], 'ef': jugador[4]})
                         topic = alias+str(int(time.time()))
                         self.createTopic(topic)
-                        manejadores.append(AtieneVisitante(self.ip, self.port, topic))
+                        manejadores.append(Partida(self.ip, self.port, topic))
                         manejadores[-1].start()
                         time.sleep(1)
 
-                        producer.send("accesoout", topic.encode())
+                        producer.send("accesoout", topic)
                     else:
                         time.sleep(1)
                         print(f"Login Fallo {alias} {passwd}")
@@ -415,7 +426,7 @@ class AccesManager(threading.Thread):
         finally:
             if 'consumer' in locals():
                 consumer.close()
-            print("Cerrando las peticones de jugadores")
+            print("Cerrando las peticiones de jugadores")
 
 class ObtenerNPC(threading.Thread):
 
@@ -611,12 +622,21 @@ if __name__ == "__main__":
     nombre_archivo = 'mapa.txt'
     tiempo_juego = 100
     tiempo_ïnicial = time.time()
-    JUGADORES = {}
+    JUGADORES = []
     
     TEMPERATURAS = []
     NPCS = []
     LIMITE = int(argv[2])
     print(argv)
+    DATABASE = argv[4]
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    cur.execute("SELECT * FROM users")
+    rows = cur.fetchall()
+    for row in rows:
+        print(row)
+    con.close()
+
 
     clases = [
         LectorMovimientos(argv[3].split(':')[0],

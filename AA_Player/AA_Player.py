@@ -9,6 +9,7 @@ import bcrypt
 import requests
 import ssl
 import urllib3
+import json
 from sys import argv
 
 from kafka import KafkaConsumer, KafkaProducer
@@ -30,7 +31,6 @@ class ManageMovimiento(threading.Thread):
         threading.Thread.__init__(self)
         self.stop_event = threading.Event()
         self.mapa = []
-        self.objetivo = [-1, -1]  # la casilla objetivo actual del player
         self.pos = [0, 0]  # posicion actual del player
         self.alias = alias
         self.topic = topic
@@ -40,26 +40,6 @@ class ManageMovimiento(threading.Thread):
         self.stop_event.set()  
 
     """
-    def objetivoAlcanzado(self, consumidor):
-        aux = (self.objetivo[0], self.objetivo[1])
-        tiempo = self.mapa[self.objetivo[0] * 20 + self.objetivo[1]]
-        print("DISFRUTANDO DE LA ATRACCION: ", self.objetivo, "el tiempos: ", tiempo)
-        if tiempo < 0:
-            tiempo = 2
-        time.sleep(tiempo)
-        # self.esperaActiva(consumidor, tiempo)
-        print("A BUSCAR NUEVA ATRACCION")
-
-        atracciones = {}  # los indices on tuplas con su localizacion, los valores es el timepo de espera
-        for i in range(0, len(self.mapa)):
-            if (-1 < self.mapa[i] < 60) and ((i // 20, i % 20) != aux):
-                atracciones[(i // 20, i % 20)] = self.mapa[i]
-        try:
-            self.objetivo = random.choice(list(atracciones))
-        except Exception as e:
-            print("ERROR al buscar nuvo objetivo. NO HAY NINGUN OBJETIVO DISPONIBLE, el usuairo data vueltas: ", e)
-            self.objetivo = [random.randint(5, 15), random.randint(5, 15)]
-        print("NUEVO OBJETIVO: ", self.objetivo)
 
     def eligeObjetivo(self):
 
@@ -79,7 +59,6 @@ class ManageMovimiento(threading.Thread):
     """   
 
     def pintaMapa(self):
-        # print("aaaaaaf")
         for i in range(0, len(self.mapa)):
             if i % 20 == 0:
                 print()
@@ -126,13 +105,53 @@ class ManageMovimiento(threading.Thread):
         return str(self.pos[0] * 20 + self.pos[1])
         # return 'alyx:'+random.choice(['NN', 'SS', 'EE', 'WW'])
 
+
+    def actualizar_posicion(self, consumidor):
+    # Mostrar el mapa y la posición actual
+        
+        print('Posición actual:', self.pos)
+
+        # Solicitar entrada por teclado al jugador para actualizar la posición
+        movimiento = input("Ingresa el movimiento (NW, NN, NE, WW, EE, SW, SS, SE): ")
+
+        # Actualizar la posición según el movimiento ingresado
+        if movimiento == 'NW':
+            self.pos[0] -= 1
+            self.pos[1] -= 1
+        elif movimiento == 'NN':
+            self.pos[0] -= 1
+        elif movimiento == 'NE':
+            self.pos[0] -= 1
+            self.pos[1] += 1
+        elif movimiento == 'WW':
+            self.pos[1] -= 1
+        elif movimiento == 'EE':
+            self.pos[1] += 1
+        elif movimiento == 'SW':
+            self.pos[0] += 1
+            self.pos[1] -= 1
+        elif movimiento == 'SS':
+            self.pos[0] += 1
+        elif movimiento == 'SE':
+            self.pos[0] += 1
+            self.pos[1] += 1
+        else:
+            print('Movimiento inválido')
+
+        # Actualizar la posición en el mapa
+        #nom = inicial del alias en minuscula
+        nom = alias[0].lower()
+        
+        self.mapa[self.pos[0]][self.pos[1]] = nom
+        return str(self.mapa)
+
+
     def consumir(self, consumer, producer):
         global running
         print("CONSUMIENDO")
         time.sleep(3)
         producer.send(self.topic + 'in', str(0).encode())
         while (not self.stop_event.is_set()) and running:
-            # print("aAAA")
             for msg in consumer:
                 print("running?: ", running, " ", consumer.subscription())
                 if not running:
@@ -144,10 +163,17 @@ class ManageMovimiento(threading.Thread):
                 else:
                     # print("recibido mapa: " + msg.value.decode())
                     # print("RECIBIDO: ", msg.value.decode())
-                    self.mapa = eval(msg.value.decode())
-                    print("posicion: ", self.pos, "objetivo: ", self.objetivo)
+                    data = msg.value.decode('utf-8')
+                    datos = json.loads(data)
+                    mapa = datos['mapa']
+                    posicion = datos['posicion']
+                    self.mapa = mapa
+                    self.pos = posicion
+                    print('Mapa:')
                     self.pintaMapa()
-                    envio = self.decideMovimiento(consumer).encode()
+                    envio = self.actualizar_posicion(consumer).encode()
+                   
+                    print("posicion: ", self.pos, "objetivo: ", self.objetivo)
                     print("enviando: ", envio)
                     producer.send(self.topic + 'in', envio)
                     time.sleep(1)
@@ -160,7 +186,9 @@ class ManageMovimiento(threading.Thread):
             consumer = KafkaConsumer(bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}',
                                      auto_offset_reset='earliest',
                                      consumer_timeout_ms=100)
-            consumer.subscribe([self.topic + 'out'])
+            topic_name = self.topic + 'out'
+            topic_name = ''.join(c if c.isalnum() or c in ['.', '_', '-'] else '' for c in topic_name)
+            consumer.subscribe([topic_name])
             producer = KafkaProducer(bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}')
             self.consumir(consumer, producer)
             print("FINAL MOVIMIENTO")
@@ -208,7 +236,9 @@ def signal_handler(sig, frame):
 def login():
     alias = input("alias: ")
     passwd = input("passwd: ")
-    mensaje = (alias + '.' + passwd).encode()
+    data = (alias + '.' + passwd)
+    mensaje = json.dumps(data).encode('utf-8')
+    print("mensaje: ", mensaje)
 
     try:
         consumer = KafkaConsumer(bootstrap_servers=f'{ip_k}:{port_k}',
