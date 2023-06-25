@@ -5,8 +5,7 @@ import threading
 from sys import argv
 import re
 import bcrypt
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+
 from flask import Flask, request, jsonify
 import logging
 import ssl
@@ -20,7 +19,7 @@ logging.basicConfig(filename='auditoria.txt', level=logging.INFO, format='%(asct
 
 registry = []
 
-IP = socket.gethostbyname(socket.gethostname())
+
 MAX_CONEXIONES = 15
 
 def registrar_auditoria(ip, alias, accion, descripcion):
@@ -290,9 +289,10 @@ def filtra(args: list) -> bool:
         return False
 
 
-    regex_1 = '^[0-9]{1,5}$'
-    if not re.match(regex_1, args[1]):
-        print("Puerto incorrecto")
+    regex_1 = '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]{1,5}$'
+    regex_2 = '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]{1,5}$'
+    if not re.match(regex_1, args[1]) or not re.match(regex_2, args[2]):
+        print("Argumentos incorrectos")
         return False
     return True
 
@@ -310,18 +310,20 @@ def handle_socket_requests():
         serversocket.close()
 
 def handle_api_requests():
-    app.run(ssl_context= ('cert.pem', 'key.pem'), host=IP, port=PORT_API)
+    app.run(ssl_context= ('cert.pem', 'key.pem'), host=IP_API, port=PORT_API)
 
 
 if __name__ == '__main__':
     if not filtra(argv):
         print("ERROR: Argumentos incorrectos")
-        print("Usage: AA_Registry.py <puerto_socket> <puerto_api> <fichero de base de datos>")
-        print("Example: AA_Registry.py 5054 5055 players.db")
+        print("Usage: AA_Registry.py <ip_socket:puerto> <ip_api:api> <fichero de base de datos>")
+        print("Example: AA_Registry.py 127.0.0.1:5054 127.0.0.1:5055 players.db")
         exit()
 
-    PORT = int(argv[1])
-    PORT_API = int(argv[2])
+    PORT = int(argv[1].split(":")[1])
+    IP = argv[1].split(":")[0]
+    IP_API = argv[2].split(":")[0]
+    PORT_API = int(argv[2].split(":")[1])
     DATABASE = argv[3]
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()

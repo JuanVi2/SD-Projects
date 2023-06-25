@@ -93,7 +93,7 @@ if __name__ == '__main__':
                     print("NPC muerto")
                     exit(0)
                 
-                sleep(10)
+                sleep(15)
                 
                 NPC = [{'id': playerId, 'posicion': [random.randint(0, 19), random.randint(0, 19)], 'nivel': NPC[0]['nivel']}]
                 data = {'npcs' : NPC}

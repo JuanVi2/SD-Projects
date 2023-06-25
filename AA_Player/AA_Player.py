@@ -11,7 +11,7 @@ import ssl
 import urllib3
 import json
 from sys import argv
-
+import time
 from kafka import KafkaConsumer, KafkaProducer
 
 HEADER = 10
@@ -36,42 +36,7 @@ class ManageMovimiento(threading.Thread):
         self.topic = topic
 
     def stop(self):
-        # print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
-        self.stop_event.set()  
-
-    """
-
-    def eligeObjetivo(self):
-
-        A partir del mapa sacas las posiciones y los timepos de todas las atracciones
-        :return:
-
-        try:
-            if self.objetivo == [-1, -1] or self.mapa[self.objetivo[0] * 20 + self.objetivo[1]] >= 60:
-                atracciones = {}  # los indices on tuplas con su localizacion, los valores es el timepo de espera
-                for i in range(0, len(self.mapa)):
-                    if -1 < self.mapa[i] < 60:
-                        atracciones[(i // 20, i % 20)] = self.mapa[i]
-                self.objetivo = random.choice(list(atracciones))
-        except Exception as e:
-            print("ERROR eligeObjetivo", e)
-
-    """   
-
-    def pintaMapa(self):
-        for i in range(0, len(self.mapa)):
-            if i % 20 == 0:
-                print()
-
-            if self.mapa[i] < -1:
-                if i == self.pos[0] * 20 + self.pos[1]:
-                    print('{:<4}'.format('#'), end="")
-                else:
-                    print('{:<4}'.format(chr(-(self.mapa[i]) + 66)), end="")
-            elif self.mapa[i] == -1:
-                print('{:<4}'.format('.'), end="")
-            else:
-                print('{:<4}'.format(self.mapa[i]), end="")
+        self.stop_event.set()   
 
     def decideMovimiento(self, consumidor):
         if self.objetivo[0] == self.pos[0] and self.objetivo[1] == self.pos[1]:
@@ -106,90 +71,113 @@ class ManageMovimiento(threading.Thread):
         # return 'alyx:'+random.choice(['NN', 'SS', 'EE', 'WW'])
 
 
-    def actualizar_posicion(self, consumidor):
+    def actualizar_posicion(self):
     # Mostrar el mapa y la posición actual
         
         print('Posición actual:', self.pos)
-
+        direc = ['NW', 'NN', 'NE', 'WW', 'EE', 'SW', 'SS', 'SE']
         # Solicitar entrada por teclado al jugador para actualizar la posición
-        movimiento = input("Ingresa el movimiento (NW, NN, NE, WW, EE, SW, SS, SE): ")
+        time.sleep(5)
+        movimiento = random.choice(direc)
 
         # Actualizar la posición según el movimiento ingresado
-        if movimiento == 'NW':
+        if movimiento == "NW":
             self.pos[0] -= 1
             self.pos[1] -= 1
-        elif movimiento == 'NN':
+        elif movimiento == "NN":
             self.pos[0] -= 1
-        elif movimiento == 'NE':
+        elif movimiento == "NE":
             self.pos[0] -= 1
             self.pos[1] += 1
-        elif movimiento == 'WW':
+        elif movimiento == "WW":
             self.pos[1] -= 1
-        elif movimiento == 'EE':
+        elif movimiento == "EE":
             self.pos[1] += 1
-        elif movimiento == 'SW':
+        elif movimiento == "SW":
             self.pos[0] += 1
             self.pos[1] -= 1
-        elif movimiento == 'SS':
+        elif movimiento == "SS":
             self.pos[0] += 1
-        elif movimiento == 'SE':
+        elif movimiento == "SE":
             self.pos[0] += 1
             self.pos[1] += 1
         else:
             print('Movimiento inválido')
 
-        # Actualizar la posición en el mapa
-        #nom = inicial del alias en minuscula
-        nom = alias[0].lower()
-        
-        self.mapa[self.pos[0]][self.pos[1]] = nom
-        return str(self.mapa)
+        if(self.pos[0] == 20):
+            self.pos[0] = 0
+        elif(self.pos[0] == -1):
+            self.pos[0] = 19
+
+        if(self.pos[1] == 20):
+            self.pos[1] = 0
+        elif(self.pos[1] == -1):
+            self.pos[1] = 19
+
+        posicion = [self.pos[0], self.pos[1]]
+        print("posicion elegida: ", posicion)
+        return posicion
 
 
     def consumir(self, consumer, producer):
         global running
         print("CONSUMIENDO")
         time.sleep(3)
-        producer.send(self.topic + 'in', str(0).encode())
+        print(str(0))
+        data = {'msg': str(0), 'posicion': []}
+        producer.send(self.topic + 'in', value=data)
+        print(self.topic + 'out')
         while (not self.stop_event.is_set()) and running:
+            
             for msg in consumer:
+                print("entro")
                 print("running?: ", running, " ", consumer.subscription())
                 if not running:
                     mens = b'no'
-                    producer.send(self.topic + 'in', mens)
+                    producer.send(self.topic + 'in', value=mens)
                     print("envio final: ", mens)
                     self.stop()
                     return
                 else:
-                    # print("recibido mapa: " + msg.value.decode())
-                    # print("RECIBIDO: ", msg.value.decode())
-                    data = msg.value.decode('utf-8')
-                    datos = json.loads(data)
-                    mapa = datos['mapa']
-                    posicion = datos['posicion']
-                    self.mapa = mapa
-                    self.pos = posicion
+                    
+                    data = msg.value
+                    
+                    self.mapa = data['mapa']
+                    self.pos = data['posicion']
+                    if(data['nivel'] == -1):
+                        print("FIN DEL JUEGO")
+                        print("Has muerto")
+                        running = False
+                        break
+                    
                     print('Mapa:')
-                    self.pintaMapa()
-                    envio = self.actualizar_posicion(consumer).encode()
+                    print(self.mapa)
+                    envio = self.actualizar_posicion()
                    
-                    print("posicion: ", self.pos, "objetivo: ", self.objetivo)
                     print("enviando: ", envio)
-                    producer.send(self.topic + 'in', envio)
+                    data = {'msg': str(0), 'posicion': envio}
+                    producer.send(self.topic + 'in', value=data)
                     time.sleep(1)
-
-        producer.send(self.topic + 'in', b'no')
+        data = {'msg': 'no', 'posicion': []}
+        producer.send(self.topic + 'in', value=data)
 
     def run(self):
         print("INICIO ManageMovimiento")
         try:
-            consumer = KafkaConsumer(bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}',
-                                     auto_offset_reset='earliest',
-                                     consumer_timeout_ms=100)
+
+            producer = KafkaProducer(bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}',
+                                     value_serializer=lambda x: 
+                                        json.dumps(x).encode('utf-8'))
             topic_name = self.topic + 'out'
-            topic_name = ''.join(c if c.isalnum() or c in ['.', '_', '-'] else '' for c in topic_name)
-            consumer.subscribe([topic_name])
-            producer = KafkaProducer(bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}')
+
+            consumer = KafkaConsumer(topic_name,
+                                    bootstrap_servers=f'{self.ip_kafka}:{self.port_kakfa}',
+                                    auto_offset_reset='earliest',
+                                    value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+            
+            print(topic_name)
+            
+            
             self.consumir(consumer, producer)
             print("FINAL MOVIMIENTO")
             return
@@ -199,30 +187,10 @@ class ManageMovimiento(threading.Thread):
         finally:
             if 'consumer' in locals():
                 consumer.close()
+            if 'producer' in locals():
+                producer.close()
             print("FIN ManageMovimiento")
-
-    """
-    def enAtraccion(self):
-        loc = []
-        for i in self.mapa:
-            if i >= 0:
-                loc.append(i)
-        if (self.pos[0] * 20 + self.pos[1]) in loc:
-            return True
-        return False
-
-    def esperaActiva(self, consumidor, tiempo):
-        inicio = time.time()
-        while True:
-            for msg in consumidor:
-                time.sleep(1)
-                # self.mapa = eval(msg.value.decode())
-                print("EN ESPERA:    -----    posicion: ", self.pos, "objetivo: ", self.objetivo)
-                # self.pintaMapa()
-                pass
-                if time.time() - inicio > tiempo:
-                    return
-    """
+            exit(0)
 
 
 def signal_handler(sig, frame):
@@ -232,30 +200,37 @@ def signal_handler(sig, frame):
     global running
     print("TERMINANDO PROCESO DE PLAYER")
     running = False
+    exit(0)
 
 def login():
     alias = input("alias: ")
     passwd = input("passwd: ")
     data = (alias + '.' + passwd)
-    mensaje = json.dumps(data).encode('utf-8')
+    mensaje = data
     print("mensaje: ", mensaje)
+    cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print("Conectado con socket")
 
     try:
-        consumer = KafkaConsumer(bootstrap_servers=f'{ip_k}:{port_k}',
-                                 auto_offset_reset='latest',
-                                 consumer_timeout_ms=100)
-        consumer.subscribe(['accesoout'])
-        producer = KafkaProducer(bootstrap_servers=f'{ip_k}:{port_k}')
-        print("enviado: ", mensaje)
-        producer.send('accesoin', mensaje)
+        consumer = KafkaConsumer('accesoout',
+                                 bootstrap_servers=f'{ip_k}:{port_k}',
+                                 consumer_timeout_ms=100,
+                                 value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+        
+        producer = KafkaProducer(bootstrap_servers=f'{ip_k}:{port_k}',
+                                 value_serializer=lambda x: 
+                                        json.dumps(x).encode('utf-8'))
+        
+        producer.send('accesoin', value=mensaje)
+        print("enviado al topic accesoin: ", mensaje)
         control = True
         while control:
             for msg in consumer:
                 print(f"f: {msg.value}")
-                if alias in msg.value.decode():
-                    print("Login Exitoso: ", msg.value.decode())
-                    a = ManageMovimiento(ip_k, port_k, alias, msg.value.decode())
-                    print("topic enviado: ", msg.value.decode())
+                if alias in msg.value:
+                    print("Login Exitoso: ", msg.value)
+                    a = ManageMovimiento(ip_k, port_k, alias, msg.value)
+                    print("topic enviado: ", msg.value)
                     a.start()
                     control = False
                 else:
@@ -370,17 +345,18 @@ def filtra(args: list) -> bool:
     Indica si el formato de los argumentos es el correcto
     :param args: Argumentos del programa
     """
-    if len(args) != 3:
+    if len(args) != 4:
         print("Numero incorrecto de argumentos")
         return False
 
     regex_1 = '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]{1,5}$'
     regex_2 = '^\S+:[0-9]{1,5}$'
-    if not (re.match(regex_1, args[1]) or re.match(regex_2, args[1])):
+    regex_3 = '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]{1,5}$'
+    if not (re.match(regex_1, args[1]) or re.match(regex_2, args[1]) or re.match(regex_3, args[1])):
         print("Direccion de servidor de registro incorrecta")
         return False
 
-    if not (re.match(regex_1, args[2]) or re.match(regex_2, args[2])):
+    if not (re.match(regex_1, args[2]) or re.match(regex_2, args[2]) or re.match(regex_3, args[2])):
         print("Direccion de servidor kafka")
         return False
 
@@ -447,14 +423,16 @@ def pintaMenu(mode):
 if __name__ == '__main__':
     if not filtra(argv):
         print("ERROR: Argumentos incorrectos")
-        print("Usage: AA_Player.py <ip_registro:puerto> <ip_kafka:puerto> ")
-        print("Example: AA_Player.py 192.168.22.0:5054 192.168.22.0:9092")
+        print("Usage: AA_Player.py <ip_registro:puerto> <ip_kafka:puerto> <ip_engine:puerto>")
+        print("Example: AA_Player.py 192.168.22.0:5054 192.168.22.0:9092 192.168.22.0:5053")
         exit()
 
     ip_r = argv[1].split(":")[0]
     port_r = int(argv[1].split(":")[1])
     ip_k = argv[2].split(":")[0]
     port_k = int(argv[2].split(":")[1])
+    ip_e = argv[3].split(":")[0]
+    port_e = int(argv[3].split(":")[1])
 
     signal.signal(signal.SIGINT, signal_handler)
     running = True

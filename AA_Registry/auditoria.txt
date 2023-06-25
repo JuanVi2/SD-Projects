@@ -72,3 +72,16 @@
 2023-06-25 10:49:01,278 | INFO | [33mPress CTRL+C to quit[0m
 2023-06-25 10:56:59,296 | INFO | IP: ('192.168.22.0', 54342) | Alias: ponce |Acción: Alta | Descripción: Registro
 2023-06-25 10:57:08,161 | INFO | IP: ('192.168.22.0', 54346) | Alias: juanvi |Acción: Alta | Descripción: Registro
+2023-06-25 21:15:52,125 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.100.42:5055
+2023-06-25 21:15:52,125 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:08:41,483 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://127.0.0.1:5055
+2023-06-25 22:08:41,483 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:08:53,164 | INFO | IP: ('127.0.0.1', 57683) | Alias: papua |Acción: Alta | Descripción: Registro
+2023-06-25 22:10:47,528 | INFO | IP: 127.0.0.1 | Alias: algo |Acción: Alta | Descripción: Registro de usuario
+2023-06-25 22:10:47,722 | INFO | 127.0.0.1 - - [25/Jun/2023 22:10:47] "POST /register HTTP/1.1" 200 -
+2023-06-25 22:14:01,695 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://127.0.0.1:5055
+2023-06-25 22:14:01,695 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:14:19,519 | INFO | IP: ('127.0.0.1', 57793) | Alias: monica |Acción: Alta | Descripción: Registro

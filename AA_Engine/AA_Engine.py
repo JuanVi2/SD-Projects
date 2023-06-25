@@ -1,4 +1,5 @@
 import hashlib
+import signal
 import sqlite3
 from time import sleep
 from json import dumps, loads
@@ -24,6 +25,15 @@ def leer_matriz_desde_archivo(nombre_archivo):
                     for valor in linea.strip().split(' ')]
             matriz.append(fila)
     return matriz
+
+def signal_handler(sig, frame):
+    """
+    Maneja la flag de final para terminal el bucle infinito cuando se le manda SIGINT
+    """
+    global running
+    print("TERMINANDO PROCESO DE ENGINE")
+    running = False
+    exit()
 
 def limpiar_posicion(mapa, alias):
     for i in range(len(mapa)):
@@ -111,6 +121,7 @@ def incluir_jugadores(mapa, jugador):
     if(mapa[posicion[0]][posicion[1]] == 'A'):
         #Aqui debo subirle un nivel al jugador
         mapa[posicion[0]][posicion[1]] = jugador['alias'].lower().strip()[0]
+        print(jugador['alias'] + " sube de nivel")
         jugador['nivel'] = jugador['nivel'] + 1
     elif(mapa[posicion[0]][posicion[1]] == 'M'):
         #Aqui debo matar al jugador que será pasarle el nivel a -1
@@ -202,7 +213,7 @@ class TiemposMapa(threading.Thread):
         print("Temperaturas obtenidas")
         print(TEMPERATURAS)
             
-"""
+
     def run(self):
         print("Obteniendo temperaturas")
         try:
@@ -216,22 +227,24 @@ class TiemposMapa(threading.Thread):
             traceback.print_exc()
         finally:
             print("Final de servidor de temperatura")
-"""         
+         
 class Partida(threading.Thread):
-    """
-    Clase Thread que se conecta cada 3 segundos al servidor de tiempos que le
-    hayamos indicado.
-    """
 
-    def __init__(self, ip, port, topic):
+    def __init__(self, ip, port, topic, alias):
         threading.Thread.__init__(self)
         self.stop_event = threading.Event()
         self.ip = ip
         self.port = port
         self.topic = topic
+        self.alias = alias
 
     def stop(self):
         self.stop_event.set()
+
+    def encontrarJugador(self, alias):
+        for jugador in JUGADORES:
+            if(jugador['alias'] == alias):
+                return jugador
 
     def consumir(self, consumer, producer):
         global MAPA
@@ -240,21 +253,40 @@ class Partida(threading.Thread):
             
             for msg in consumer:
                 print(self.topic, " : ", msg.value)
+                print(JUGADORES)
                 try:
-                    if msg.value == b'no' or not running:
-                        del (JUGADORES[self.topic])
-                        print("JUGADOR MUERTO: ",self.topic)
+                    if msg.value['msg'] == 'no' or not running:
+                        JUGADORES = [item for item in JUGADORES if item.get('nivel') != -1]
+                        print("JUGADOR MUERTO: ",self.alias)
                         self.stop_event.set()
                         self.stop()
                         return
-                    JUGADORES[self.topic] = msg.value
+                    if(msg.value['posicion'] == []):
+                        for jugador in JUGADORES:
+                            if(jugador['alias'] == self.alias):
+                                data = {
+                                    'mapa': MAPA,
+                                    'posicion': jugador['posicion'],
+                                    'nivel': jugador['nivel']
+                                }
+                                break
+                    else:
+                        for jugador in JUGADORES:
+                            if(jugador['alias'] == self.alias):
+                                jugador['posicion'] = msg.value['posicion']
+                                incluir_jugadores(MAPA, jugador)
+                                data = {
+                                    'mapa': MAPA,
+                                    'posicion': msg.value['posicion'],
+                                    'nivel': jugador['nivel']
+                                }
+                                break
+
                     print(f"Partida envio de mapa para {self.topic}")
                     print(JUGADORES)
-                    data = {
-                        'mapa': MAPA,
-                        'posicion': JUGADORES[self.topic]['posicion'],
-                    }
-                    producer.send(self.topic + 'out', data.encode())
+                    print(data)
+                    producer.send(self.topic + 'out', value=data)
+                    print("enviado")
                 except Exception as e:
                     print("ERROR EN Partida consumir", e)
                     traceback.print_exc()
@@ -262,11 +294,14 @@ class Partida(threading.Thread):
     def run(self):
         print("INICIO PARTIDA " + self.topic)
         try:
-            consumer = KafkaConsumer(bootstrap_servers=f'{self.ip}:{self.port}',
-                                     auto_offset_reset='latest',
-                                     consumer_timeout_ms=100)
-            consumer.subscribe([self.topic + 'in'])
-            producer = KafkaProducer(bootstrap_servers=f'{self.ip}:{self.port}')
+            consumer = KafkaConsumer(self.topic + 'in',
+                                     bootstrap_servers=f'{self.ip}:{self.port}',
+                                     consumer_timeout_ms=100,
+                                     value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+            
+            producer = KafkaProducer(bootstrap_servers=f'{self.ip}:{self.port}',
+                                     value_serializer=lambda x: 
+                                        json.dumps(x).encode('utf-8'))
             self.consumir(consumer, producer)
         except Exception as e:
             print("ERROR EN LectorMovimientos :", e)
@@ -384,17 +419,19 @@ class AccesManager(threading.Thread):
         while (not self.stop_event.is_set()) and running:
             for msg in consumer:
                 if len(manejadores) >= LIMITE:
-                    producer.send("accesoout", b'no')  # todo poner otro codgio para cunado hay demansiados
+                    data = 'no'
+                    producer.send("accesoout", value=data) 
                 try:
+                    print(msg.value)
                     alias = msg.value.split(".")[0]
                     passwd = msg.value.split(".")[1]
                     if self.login(alias, passwd) and len(manejadores) < LIMITE:
                         print(f"Login Exito {alias} {passwd}")
                         jugador = self.obtenerPersonaje(alias)
-                        JUGADORES.append({'alias': jugador[0], 'password': jugador[1], 'posicion': None, 'nivel': jugador[2], 'ec': jugador[3], 'ef': jugador[4]})
                         topic = alias+str(int(time.time()))
+                        JUGADORES.append({'alias': jugador[0], 'password': jugador[1], 'posicion': None, 'nivel': jugador[2], 'ec': jugador[3], 'ef': jugador[4]})
                         self.createTopic(topic)
-                        manejadores.append(Partida(self.ip, self.port, topic))
+                        manejadores.append(Partida(self.ip, self.port, topic, jugador[0]))
                         manejadores[-1].start()
                         time.sleep(1)
 
@@ -402,7 +439,8 @@ class AccesManager(threading.Thread):
                     else:
                         time.sleep(1)
                         print(f"Login Fallo {alias} {passwd}")
-                        producer.send("accesoout", b'no')
+                        data = 'no'
+                        producer.send("accesoout", data)
                 except Exception as e:
                     print("ERROR EN AccesManager", e)
                     traceback.print_exc()
@@ -452,10 +490,7 @@ class ObtenerNPC(threading.Thread):
 
     def consumir(self, consumer, producer):
         while (not self.stop_event.is_set()) and running:
-            '''
-            data = {'Entrada': True}
-            producer.send("AccesoNpc", value=data)
-            '''
+            
             print("Bucle de obtener npc")
             for msg in consumer:
                 
@@ -484,7 +519,7 @@ class ObtenerNPC(threading.Thread):
                     if(existe != True):
                         print("Npc nuevo")
                         topic = npc['id']
-                        self.createTopic(topic)
+                        self.createTopic('NPC' + topic + 'nuevo')
                         print("El topic creado es el siguiente: " + topic)
                         NPCS.append(npc)
                     
@@ -516,7 +551,7 @@ class ObtenerNPC(threading.Thread):
                 
                 self.consumir(consumer,producer)
 
-                print("He salido y no debería")
+                
                 print(len(NPCS))
             except Exception as e:
                 print("Error al solicitar los NPCS:", e)
@@ -551,64 +586,56 @@ class GuardarMapa(threading.Thread):
         finally:
             print("Mapa guardado en la base de datos")
 
-class DetectarMovimientosNPC(threading.Thread):
+def handle_client(conn, addr):
+    """
+    :param conn: conexion con el cliente
+    :param addr: direccion del cliente
+    """
+    HEADER = 10
+    resultado = False
+    print(f"NUEVA CONEXION: {addr}")
+
+    c_length = int(conn.recv(HEADER))
+    credentials = conn.recv(c_length).decode()
+
+    print(f"recibido: {credentials}")
+    modo = credentials.split(":")[0]
+
     
-    def __init__(self, ip, port):
-        threading.Thread.__init__(self)
-        self.stop_event = threading.Event()
-        self.ip = ip
-        self.port = port
 
-    def stop(self):
-        self.stop_event.set()
+    conn.send(b'ok')
+    conn.close()
 
+def repartidor(server):
+
+    server.listen()
+    print(f"ESCUCHANDO EN {IP_SOCKET}:{PORT_SOCKET}")
+    num_conexiones = threading.active_count() - 1
+    print(f"N CONEXIONES ACTUAL: {num_conexiones}")
     
+    while True:
+        conn, addr = server.accept()
+        num_conexiones = threading.active_count()
+        if num_conexiones >= LIMITE:
+            print("LIMITE DE CONEXIONES EXCEDIDO")
+            conn.send(b"EL SERVIDOR HA EXCEDIDO EL LIMITE DE CONEXIONES")
+            conn.close()
+            num_conexiones = threading.active_count() - 1
+        else:
+            thread = threading.Thread(target=handle_client, args=(conn, addr))
+            thread.start()
+            print(f"[CONEXIONES ACTIVAS] {num_conexiones}")
+            print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", LIMITE - num_conexiones)
 
-    def run(self):
-        print("Escuchando movimientos de los NPC")
-        global MAPA
-        global NPCS
-        '''while running:
-            print('Estoy corriendo')
-            for npc in NPCS:
-                print('Ya hay npcs')
-                print(npc)
-                try:
-                    
-                    
-                    
-                    
-
-                    consumer = KafkaConsumer(
-                            topic + 'out',
-                            bootstrap_servers=f'{self.ip}:{self.port}',
-                            enable_auto_commit=True,
-                            group_id='test',
-                            value_deserializer=lambda x: loads(x.decode('utf-8')))
-                    print("el consumer se ha creado")
-                    print(consumer)
-                    for msg in consumer:
-                        print("Recibiendo movimiento de NPC")
-                        print(msg.value)
-                        npc['posicion'] = msg.value['posicion']
-                        print(NPCS)
-                        
-                        data = {'mapa': MAPA,
-                            'id' : npc['id'],
-                            'nivel' : npc['nivel']
-                            }
-                        producer.send(npc['id'] + 'in', value = data)
-                        if(npc['nivel'] == -1):
-                            NPCS.remove(npc)
-                        break
-                    print("He salido del bucle de recibir movimiento de NPC")
-                        
-                        
-                except Exception as e:
-                    print("Error al detectar el movimiento de los npcs:", e)
-                    traceback.print_exc()'''
-        
-
+def handle_socket_requests():
+    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serversocket.bind((IP_SOCKET, PORT_SOCKET))
+    try:
+        repartidor(serversocket)
+    except Exception as e:
+        print("ERROR: ", e)
+    finally:
+        serversocket.close()
 
 if __name__ == "__main__":
 
@@ -623,7 +650,8 @@ if __name__ == "__main__":
     tiempo_juego = 100
     tiempo_ïnicial = time.time()
     JUGADORES = []
-    
+    PORT_SOCKET = int(argv[1].split(':')[1])
+    IP_SOCKET = argv[1].split(':')[0]
     TEMPERATURAS = []
     NPCS = []
     LIMITE = int(argv[2])
@@ -637,6 +665,7 @@ if __name__ == "__main__":
         print(row)
     con.close()
 
+    signal.signal(signal.SIGINT, signal_handler)
 
     clases = [
         LectorMovimientos(argv[3].split(':')[0],
@@ -651,12 +680,8 @@ if __name__ == "__main__":
                      argv[4]) 
 
     ]
-    '''
-    AccesManager(argv[1].split(':')[0],
-                     int(argv[1].split(':')[1]),
-                     argv[4]),
-    '''
     
+    socket_thread = threading.Thread(target=handle_socket_requests)
     # Esto lee el mapa inicial con las minas y los alimentos
     matriz_inicial = leer_matriz_desde_archivo(nombre_archivo)
     MAPA = matriz_inicial
@@ -665,7 +690,7 @@ if __name__ == "__main__":
 
     for c in clases:
         c.start()
-    os.system("python3 ./Api_Engine.py")
+    os.system("python ./Api_Engine.py")
 
     while running and time.time() - tiempo_ïnicial < tiempo_juego:
         pass
@@ -681,19 +706,17 @@ if __name__ == "__main__":
     for c in clases:
         c.join()
 
-    #Variables de configuración
+    nivel = 0
+    alias = ""
+    for jugador in JUGADORES:
+        if(jugador['nivel'] > nivel):
+            nivel = jugador['nivel']
+            alias = jugador['alias']
+    if(nivel != 0):
+        print("El ganador es: " + alias + " con nivel: " + str(nivel))
+    else:
+        print("No hay ganador")    
+    exit(0)
     
-    
-    jugador = {
-        'alias': 'Ponce',
-        'password': '1234',
-        'posicion': [0, 0],
-        'nivel': 0,
-        'ec': 0,
-        'ef': 0,
-    }
-
-    #Esto lo tengo que llamar en nada que reciba un mensaje del jugador
-    matriz = limpiar_posicion(MAPA, jugador['alias'])
 
    
