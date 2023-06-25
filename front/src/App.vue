@@ -1,32 +1,16 @@
+
 <template>
-  <div id="app">
-    <HeaderComponent></HeaderComponent>
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-    <router-view></router-view>
-    <componente1></componente1>
+  <div>
+    <MapComponent />
   </div>
 </template>
 
 <script>
-import Home from './components/Home.vue'
-import Cabecera from './components/Cabecera.vue'
+import MapComponent from './components/MapComponent.vue';
 
 export default {
-  name: 'App',
   components: {
-    Home,
-    Cabecera
-  }
-}
+    MapComponent,
+  },
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>

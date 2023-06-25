@@ -8,7 +8,8 @@ import time
 from flask import Flask
 from flask_cors import CORS, cross_origin
 
-
+cert = 'cert.pem'
+key = 'key.pem'
 
 # a simple flask server to serve the API
 app = flask.Flask(__name__)
@@ -34,7 +35,7 @@ def get_map_api():
     return flask.jsonify(get_map())
 
 if __name__ == "__main__":
-    app.run(port=5500, debug=True)
+    app.run(ssl_context= ('cert.pem', 'key.pem') , host='0.0.0.0', port=443)
 
 
 

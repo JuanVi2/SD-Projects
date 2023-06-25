@@ -1,23 +1,12 @@
-import App from './App.vue'
-import Vue from 'vue';
-import helmet from "helmet";
-import VueRouter from 'vue-router';
+import { createApp } from 'vue';
+import App from './App.vue';
+import MapComponent from './components/MapComponent.vue'; // asegúrate de que esta ruta es correcta
+//import Slider from './components/Slider.vue'; // asegúrate de que esta ruta es correcta
 
+const app = createApp(App);
 
-Vue.use(VueRouter);
-App.use(helmet());
+app.component('MapComponent', MapComponent); // registra el componente MapComponent globalmente
+//app.component('Slider', Slider); // registra el componente Slider globalmente
 
-const routes = [
-    {path: '/', component: map},
-    {path: '/data', component: Slider}
-  ];
+app.mount('#app');
 
-const router = new VueRouter({
-    routes,
-    mode: 'history'
-  });
-  
-new Vue({
-    router,
-    render: h => h(App),
-}).$mount('#app')

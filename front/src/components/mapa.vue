@@ -26,14 +26,7 @@ export default {
     axios
       .get('http://localhost:5500/map')
       .then(response => (this.info = response))
-  },
-
-  
- 
-
-
-
-      
+  },   
 };
 
 setTimeout(function(){
