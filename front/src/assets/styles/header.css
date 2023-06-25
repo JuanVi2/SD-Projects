@@ -1,0 +1,106 @@
+*{
+    margin: 0px;
+    padding: 0px;  
+    
+}
+
+#header{
+    display: grid;
+    grid-template-columns: 1fr 22.3% 1%;
+    grid-template-rows: 1fr;
+    width: 100%;
+    background-color: rgb(36, 35, 35);
+    color: white;
+    
+}
+
+#header #logo {
+    line-height: 100px;
+    overflow: hidden;
+    width: 100%;
+}
+
+#header #logo h1{
+    display: block;
+    color:white;
+    margin: 0px auto;
+    font-size: 25px;
+    text-shadow: 2px 2px 1px black;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    /*animation: showText 3s linear; */
+    width: 50%;
+    text-shadow: 0.5px 0.5px 8px #ccc;
+}
+
+
+
+
+
+@keyframes showText {
+    0%{
+        transform: translateX(-600%) scale(5,5);
+        opacity: 1;
+
+    }
+    50%{
+        transform: translateX(600%) scale(5,5);
+        opacity: 1;
+
+    }
+    75%{
+        transform: translateX(600%) scale(5,5);
+        text-shadow: none;
+        color:transparent;
+        opacity: 0;
+
+    }
+    100%{
+        transform: translateX(0%) scale(1,1);
+        opacity: 1;
+        text-shadow: 2px 2px 1px black;
+        color:white;
+
+    }
+    
+}
+
+
+#header #menu ul{
+    display: grid;
+    grid-template-columns: 1fr 1fr ;
+    height: 10px;
+}
+
+#header #menu ul li:hover {
+    background-color:rgb(35, 95, 185);
+}
+
+#header #menu #login{
+    display: block;
+    text-align: center;
+}
+
+#header #menu #register{
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+#header #menu  a{
+    text-decoration: none;
+    line-height: 100px;
+    color:white;
+    text-transform: uppercase;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#header #menu h2{
+    transition: all 400ms;
+    font-size: 20px;
+}
+
+#header #menu h2:hover{
+    scale:1.1;
+}
+
+

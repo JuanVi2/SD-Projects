@@ -645,7 +645,7 @@ if __name__ == "__main__":
 
     for c in clases:
         c.start()
-    #    os.system("python3 ./Api_Engine.py")
+    os.system("python3 ./Api_Engine.py")
 
     while running and time.time() - tiempo_ïnicial < tiempo_juego:
         pass

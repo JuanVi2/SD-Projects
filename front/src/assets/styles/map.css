@@ -1,0 +1,20 @@
+#map{
+    width: 50%;  
+    margin: 0px auto;
+    margin-top: 1%;
+    height: 750px;
+    display: grid;
+    grid-template-rows: 1fr 5fr;
+    border-radius: 10px;
+    box-shadow: 0 5px 6px rgba(0, 0, 0, 0.12), 10px 10px 4px rgba(0, 0, 0, 0.24);
+    background-color:white;
+    
+}
+
+
+
+#map #map-mostrar{
+    margin-top: 1%;
+    border-radius: 0px 0px 10px 10px;
+    font-size:32px;
+}
