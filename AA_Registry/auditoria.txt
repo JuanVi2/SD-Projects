@@ -1,0 +1,87 @@
+
+ * Running on http://192.168.22.0:5055
+2023-06-24 16:05:55,383 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 16:06:09,641 | INFO | IP: ('192.168.22.0', 63260) | Alias: juan |Acción: Alta | Descripción: Registro
+2023-06-24 16:06:15,519 | INFO | IP: ('192.168.22.0', 63262) | Alias: juan |Acción: Alta | Descripción: Registro
+2023-06-24 16:09:29,153 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://192.168.22.0:5055
+2023-06-24 16:09:29,153 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 16:09:50,511 | INFO | IP: ('192.168.22.0', 63395) | Alias: rico |Acción: Alta | Descripción: Registro
+2023-06-24 16:09:58,589 | INFO | IP: 192.168.22.0 | Alias: rico |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 16:09:58,592 | ERROR | Alias: rico |Acción: Alta | Descripción: Alias ya registrado
+2023-06-24 16:09:58,593 | INFO | 192.168.22.0 - - [24/Jun/2023 16:09:58] "POST /register HTTP/1.1" 200 -
+2023-06-24 16:10:04,947 | INFO | IP: 192.168.22.0 | Alias: rico |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 16:10:05,214 | INFO | 192.168.22.0 - - [24/Jun/2023 16:10:05] "POST /delete HTTP/1.1" 200 -
+2023-06-24 16:11:36,742 | INFO | IP: 192.168.22.0 | Alias: ponce |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 16:11:37,017 | INFO | 192.168.22.0 - - [24/Jun/2023 16:11:37] "POST /register HTTP/1.1" 200 -
+2023-06-24 16:11:45,239 | INFO | IP: 192.168.22.0 | Alias: ponce |Acción: Modificación | Descripción: Modificación de usuario
+2023-06-24 16:11:45,505 | ERROR | Alias: ponce |Acción: Modificación | Descripción: Nuevo alias ya registrado
+2023-06-24 16:11:45,506 | INFO | 192.168.22.0 - - [24/Jun/2023 16:11:45] "POST /update HTTP/1.1" 200 -
+2023-06-24 17:02:15,145 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 17:02:15,146 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 17:02:41,589 | INFO | IP: ('192.168.22.0', 64838) | Alias: joserramon |Acción: Alta | Descripción: Registro
+2023-06-24 17:02:53,428 | INFO | IP: ('192.168.22.0', 64844) | Alias: nono |Acción: Alta | Descripción: Registro
+2023-06-24 17:53:42,312 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 17:53:42,313 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 17:55:38,659 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://192.168.22.0:5055
+2023-06-24 17:55:38,659 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 17:55:54,830 | INFO | IP: ('192.168.22.0', 49768) | Alias: prueba1 |Acción: Alta | Descripción: Registro
+2023-06-24 17:56:05,659 | ERROR | 192.168.22.0 - - [24/Jun/2023 17:56:05] code 400, message Bad request version ('\x06\x92')
+2023-06-24 17:56:05,660 | INFO | 192.168.22.0 - - [24/Jun/2023 17:56:05] "[31m[1m\x16\x03\x01\x02\x00\x01\x00\x01ü\x03\x03 \x86D\x9e^\x94ÎD\x7fÞVæ$\x1d\x06\x92[0m" 400 -
+2023-06-24 17:56:31,078 | ERROR | 192.168.22.0 - - [24/Jun/2023 17:56:31] code 400, message Bad request version ('\x00\x04\x03\x00\x01\x02\x00')
+2023-06-24 17:56:31,078 | INFO | 192.168.22.0 - - [24/Jun/2023 17:56:31] "[31m[1m\x16\x03\x01\x02\x00\x01\x00\x01ü\x03\x03\x8d\x92;ÁzÝÂÛz÷\x95\x8f]Ï\x88ã\x91\x89\x12¦ï¾;;\x84)'ðÛ|¤Ä ÍÑÛ~jM·z[+þýf\x00Å\x9e\x13a\x94\x1d\x87[\x13¿ºÉ7Ê\x08[\x05ö\x00$\x13\x02\x13\x03\x13\x01À,À0À+À/Ì©Ì¨À$À(À#À'\x00\x9f\x00\x9e\x00k\x00g\x00ÿ\x01\x00\x01\x8f\x00\x0b\x00\x04\x03\x00\x01\x02\x00[0m" 400 -
+2023-06-24 17:58:58,506 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 17:58:58,507 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 18:03:10,047 | INFO | IP: 192.168.22.0 | Alias: prueba1 |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 18:03:10,322 | INFO | 192.168.22.0 - - [24/Jun/2023 18:03:10] "POST /delete HTTP/1.1" 200 -
+2023-06-24 18:05:40,064 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 18:05:40,064 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 18:06:08,946 | INFO | IP: 192.168.22.0 | Alias: prueba1 |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 18:06:09,227 | INFO | 192.168.22.0 - - [24/Jun/2023 18:06:09] "POST /register HTTP/1.1" 200 -
+2023-06-24 18:13:47,360 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 18:13:47,361 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 18:14:33,808 | INFO | IP: 192.168.22.0 | Alias: yoquese |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 18:14:34,092 | INFO | 192.168.22.0 - - [24/Jun/2023 18:14:34] "POST /register HTTP/1.1" 200 -
+2023-06-24 18:17:20,415 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://192.168.22.0:5055
+2023-06-24 18:17:20,417 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 18:17:43,990 | INFO | IP: ('192.168.22.0', 50458) | Alias: prueba3 |Acción: Alta | Descripción: Registro
+2023-06-24 18:17:51,797 | INFO | IP: 192.168.22.0 | Alias: prueba3 |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 18:17:52,071 | INFO | 192.168.22.0 - - [24/Jun/2023 18:17:52] "POST /delete HTTP/1.1" 200 -
+2023-06-24 19:33:25,780 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-24 19:33:25,781 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-24 19:33:45,259 | INFO | IP: ('192.168.22.0', 52307) | Alias: rompe |Acción: Alta | Descripción: Registro
+2023-06-24 19:33:45,263 | ERROR | Alias: rompe |Acción: Alta | Descripción: Alias ya registrado
+2023-06-24 19:33:58,046 | INFO | IP: ('192.168.22.0', 52312) | Alias: rompetechos |Acción: Alta | Descripción: Registro
+2023-06-24 19:36:28,437 | INFO | IP: 192.168.22.0 | Alias: rompetechos |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 19:36:28,716 | INFO | 192.168.22.0 - - [24/Jun/2023 19:36:28] "POST /delete HTTP/1.1" 200 -
+2023-06-24 19:39:06,858 | INFO | IP: ('192.168.22.0', 52457) | Alias: rompe |Acción: Baja | Descripción: Delete
+2023-06-24 19:39:16,528 | INFO | IP: 192.168.22.0 | Alias: rompe |Acción: Alta | Descripción: Registro de usuario
+2023-06-24 19:39:16,804 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:16] "POST /register HTTP/1.1" 200 -
+2023-06-24 19:39:22,767 | INFO | IP: 192.168.22.0 | Alias: rompe |Acción: Baja | Descripción: Baja de usuario
+2023-06-24 19:39:23,077 | INFO | 192.168.22.0 - - [24/Jun/2023 19:39:23] "POST /delete HTTP/1.1" 200 -
+2023-06-25 10:49:01,278 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.22.0:5055
+2023-06-25 10:49:01,278 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 10:56:59,296 | INFO | IP: ('192.168.22.0', 54342) | Alias: ponce |Acción: Alta | Descripción: Registro
+2023-06-25 10:57:08,161 | INFO | IP: ('192.168.22.0', 54346) | Alias: juanvi |Acción: Alta | Descripción: Registro
+2023-06-25 21:15:52,125 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://192.168.100.42:5055
+2023-06-25 21:15:52,125 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:08:41,483 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://127.0.0.1:5055
+2023-06-25 22:08:41,483 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:08:53,164 | INFO | IP: ('127.0.0.1', 57683) | Alias: papua |Acción: Alta | Descripción: Registro
+2023-06-25 22:10:47,528 | INFO | IP: 127.0.0.1 | Alias: algo |Acción: Alta | Descripción: Registro de usuario
+2023-06-25 22:10:47,722 | INFO | 127.0.0.1 - - [25/Jun/2023 22:10:47] "POST /register HTTP/1.1" 200 -
+2023-06-25 22:14:01,695 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on https://127.0.0.1:5055
+2023-06-25 22:14:01,695 | INFO | [33mPress CTRL+C to quit[0m
+2023-06-25 22:14:19,519 | INFO | IP: ('127.0.0.1', 57793) | Alias: monica |Acción: Alta | Descripción: Registro

@@ -1,0 +1,4 @@
+kafka-python
+bcrypt
+pycryptodome
+pycryptodomex

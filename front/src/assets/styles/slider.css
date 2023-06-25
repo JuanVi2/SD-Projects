@@ -1,0 +1,113 @@
+#slider{
+    width: 40%;  
+    margin: 0px auto;
+    margin-top: 5%;
+    height: 650px;
+    display: grid;
+    align-items: center;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 5px 6px rgba(0, 0, 0, 0.12), 10px 10px 4px rgba(0, 0, 0, 0.24);
+    background-color: white;
+    font-size: 70px;
+    text-align: center;    
+}
+
+.datos{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.text{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 40px;
+}
+
+.dato{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 40px;
+
+}
+/*
+#info{
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+
+#imagen{
+    overflow: hidden;
+    display: flex;
+    border-radius: 0px 10px 10px 0px;
+    background-color: size;
+}
+
+#imagen img{
+    width: 100%;
+}
+
+#title{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(36, 35, 35);
+    border-radius: 10px 0px 0px 0px;
+}
+
+
+#title h2{
+    color: white;
+    font-family:sans-serif;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 50px;
+    text-shadow: 0.5px 0.5px 10px #ccc;
+
+}
+
+#data{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    color: grey;
+    background: #FAFAFA;
+}
+
+.name{
+    width: 100%;
+    background-color: #FAFAFA;
+    justify-self: center;
+    color: rgb(0, 0, 128);
+    font-size: 30px;
+    
+}
+
+#pie-pag{
+    border-radius: 0px 0px 0px 10px;
+    background-color: rgb(36, 35, 35);
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+}
+
+#ua-logo{
+    display: flex;
+    
+    width: 100%;
+    padding-left: 20%;
+
+}
+
+#ua-logo img{
+    width: 40%;
+}
+
+#data-asignatura{
+    color: white;
+    align-self: center;
+    text-align: center;
+    
+    font-family: sans-serif;
+}
+
+*/
+
